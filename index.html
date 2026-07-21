@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EstoquePro - Sistema Full-Stack</title>
+    <!-- Fontes -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- Ícones -->
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <div class="app-container">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <div class="logo-area">
+                <i class="ph-fill ph-hexagon"></i> <span>EstoquePro</span>
+            </div>
+            
+            <nav class="nav-menu">
+                <button class="nav-btn active" data-target="dash-tab"><i class="ph ph-squares-four"></i> Dashboard</button>
+                <button class="nav-btn" data-target="prod-tab"><i class="ph ph-package"></i> Produtos</button>
+                <button class="nav-btn" data-target="mov-tab"><i class="ph ph-arrows-left-right"></i> Movimentações</button>
+                <button class="nav-btn"><i class="ph ph-chart-line-up"></i> Relatórios</button>
+                <button class="nav-btn"><i class="ph ph-gear"></i> Configurações</button>
+            </nav>
+
+            <div class="user-profile">
+                <div class="avatar">A</div>
+                <div>
+                    <strong style="font-size: 0.9rem; display:block">Administrador</strong>
+                    <span style="font-size: 0.75rem; color:var(--text-muted)">admin@estoquepro.com</span>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            
+            <!-- ABA: DASHBOARD -->
+            <section id="dash-tab" class="tab-pane active">
+                <h1 class="page-title">Dashboard</h1>
+                
+                <!-- Métricas -->
+                <div class="metrics-grid">
+                    <div class="metric-card">
+                        <span class="metric-title">Total de Produtos (Tipos)</span>
+                        <span class="metric-value" id="m-tipos">0</span>
+                    </div>
+                    <div class="metric-card">
+                        <span class="metric-title">Itens em Estoque (Soma)</span>
+                        <span class="metric-value" id="m-itens">0</span>
+                    </div>
+                    <div class="metric-card warning">
+                        <span class="metric-title">Estoque Baixo/Zerado</span>
+                        <span class="metric-value" id="m-baixo">0</span>
+                    </div>
+                    <div class="metric-card">
+                        <span class="metric-title">Valor Total (R$)</span>
+                        <span class="metric-value" id="m-valor">R$ 0,00</span>
+                    </div>
+                    <div class="metric-card success">
+                        <span class="metric-title">Movimentações Hoje</span>
+                        <span class="metric-value" id="m-hoje">0</span>
+                    </div>
+                </div>
+
+                <div class="dashboard-layout">
+                    <!-- Esquerda: Graficos e Tabela -->
+                    <div class="dash-left">
+                        <div class="charts-row">
+                            <div class="panel">
+                                <h3>Movimentações (Últimos 7 dias)</h3>
+                                <div class="chart-container">
+                                    <canvas id="lineChart"></canvas>
+                                </div>
+                            </div>
+                            <div class="panel">
+                                <h3>Estoque por Categoria</h3>
+                                <div class="chart-container">
+                                    <canvas id="doughnutChart"></canvas>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="panel">
+                            <h3>Estoque Atual</h3>
+                            <div class="table-responsive">
+                                <table>
+                                    <thead>
+                                        <tr>
+                                            <th>SKU</th>
+                                            <th>Produto</th>
+                                            <th>Categoria</th>
+                                            <th>Qtd Atual</th>
+                                            <th>Est. Mínimo</th>
+                                            <th>Status</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="dash-table-body">
+                                        <!-- Renderizado via JS -->
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Direita: Alertas e Atividade -->
+                    <div class="dash-right">
+                        <div class="panel" style="height: 100%;">
+                            <h3>Últimas Movimentações</h3>
+                            <ul class="activity-list" id="activity-list">
+                                <!-- Renderizado via JS -->
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ABA: PRODUTOS -->
+            <section id="prod-tab" class="tab-pane">
+                <h1 class="page-title">Produtos</h1>
+                
+                <div class="panel">
+                    <h3>Novo Produto</h3>
+                    <form id="form-produto" class="form-grid" style="margin-top:1rem;">
+                        <div class="form-group">
+                            <label>SKU (Código Único)</label>
+                            <input type="text" id="p-sku" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Nome do Produto</label>
+                            <input type="text" id="p-nome" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Categoria</label>
+                            <select id="p-cat" required>
+                                <option value="Eletrônicos">Eletrônicos</option>
+                                <option value="Informática">Informática</option>
+                                <option value="Escritório">Escritório</option>
+                                <option value="Outros">Outros</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Preço Base (R$)</label>
+                            <input type="number" step="0.01" id="p-preco" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Estoque Mínimo (Alerta)</label>
+                            <input type="number" id="p-min" value="5" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Quantidade Inicial</label>
+                            <input type="number" id="p-qtd" value="0" required>
+                        </div>
+                        <div class="form-group full">
+                            <label>Descrição</label>
+                            <input type="text" id="p-desc">
+                        </div>
+                        <div class="form-group full" style="align-items: flex-start;">
+                            <button type="submit" class="btn btn-primary">Salvar Produto</button>
+                        </div>
+                    </form>
+                </div>
+
+                <div class="panel">
+                    <h3>Lista de Produtos</h3>
+                    <div class="table-responsive">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>SKU</th>
+                                    <th>Nome</th>
+                                    <th>Categoria</th>
+                                    <th>Preço</th>
+                                    <th>Estoque</th>
+                                    <th>Ações</th>
+                                </tr>
+                            </thead>
+                            <tbody id="prod-table-body">
+                                <!-- JS -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ABA: MOVIMENTACOES -->
+            <section id="mov-tab" class="tab-pane">
+                <h1 class="page-title">Movimentações de Estoque</h1>
+                
+                <div class="dashboard-layout">
+                    <div class="panel">
+                        <h3>Registrar Movimentação</h3>
+                        <form id="form-mov" class="form-grid" style="margin-top:1rem; display: flex; flex-direction: column; gap:1rem;">
+                            
+                            <div class="form-group">
+                                <label>Tipo de Movimentação</label>
+                                <div class="type-selector">
+                                    <input type="hidden" id="m-tipo" value="ENTRADA">
+                                    <button type="button" class="type-btn in active" onclick="setMovType('ENTRADA')">Entrada (+)</button>
+                                    <button type="button" class="type-btn out" onclick="setMovType('SAIDA')">Saída (-)</button>
+                                </div>
+                            </div>
+
+                            <div class="form-group">
+                                <label>Produto (Busca / Seleção)</label>
+                                <select id="m-prod" required>
+                                    <option value="">Carregando produtos...</option>
+                                </select>
+                            </div>
+
+                            <div class="form-grid">
+                                <div class="form-group">
+                                    <label>Quantidade</label>
+                                    <input type="number" id="m-qtd" min="1" required>
+                                </div>
+                                <div class="form-group">
+                                    <label>Motivo</label>
+                                    <select id="m-motivo" required>
+                                        <option value="Compra">Compra Fornecedor</option>
+                                        <option value="Venda">Venda</option>
+                                        <option value="Ajuste">Ajuste de Estoque</option>
+                                        <option value="Perda">Perda / Avaria</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div class="form-group">
+                                <label>Observações</label>
+                                <input type="text" id="m-obs">
+                            </div>
+
+                            <button type="submit" class="btn btn-primary">Registrar Movimentação</button>
+                        </form>
+                    </div>
+
+                    <div class="panel">
+                        <h3>Histórico</h3>
+                        <div class="table-responsive">
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th>Data/Hora</th>
+                                        <th>Produto</th>
+                                        <th>Qtd</th>
+                                        <th>Motivo</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="mov-table-body">
+                                    <!-- JS -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+        </main>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
