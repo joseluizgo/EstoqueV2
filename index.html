@@ -22,19 +22,21 @@
             </div>
             
             <nav class="nav-menu">
-                <button class="nav-btn active" data-target="dash-tab"><i class="ph ph-squares-four"></i> Dashboard</button>
-                <button class="nav-btn" data-target="prod-tab"><i class="ph ph-package"></i> Produtos</button>
-                <button class="nav-btn" data-target="mov-tab"><i class="ph ph-arrows-left-right"></i> Movimentações</button>
-                <button class="nav-btn"><i class="ph ph-chart-line-up"></i> Relatórios</button>
-                <button class="nav-btn"><i class="ph ph-gear"></i> Configurações</button>
+                <button class="nav-btn active" data-target="dash-tab" data-i18n="menu_dashboard"><i class="ph ph-squares-four"></i> Dashboard</button>
+                <button class="nav-btn" data-target="prod-tab" data-i18n="menu_produtos"><i class="ph ph-package"></i> Produtos</button>
+                <button class="nav-btn" data-target="mov-tab" data-i18n="menu_movimentacoes"><i class="ph ph-arrows-left-right"></i> Movimentações</button>
+                <button class="nav-btn" data-target="config-tab" data-i18n="menu_config"><i class="ph ph-gear"></i> Configurações</button>
             </nav>
 
-            <div class="user-profile">
-                <div class="avatar">A</div>
-                <div>
-                    <strong style="font-size: 0.9rem; display:block">Administrador</strong>
-                    <span style="font-size: 0.75rem; color:var(--text-muted)">admin@estoquepro.com</span>
+            <div class="user-profile" style="flex-direction: column; align-items: flex-start; gap: 1rem;">
+                <div style="display: flex; align-items: center; gap: 0.75rem;">
+                    <div class="avatar" id="user-avatar">A</div>
+                    <div>
+                        <strong style="font-size: 0.9rem; display:block" id="user-name">Administrador</strong>
+                        <span style="font-size: 0.75rem; color:var(--text-muted)" id="user-email">admin@estoquepro.com</span>
+                    </div>
                 </div>
+                <button id="btn-logout" class="btn" style="width: 100%; background: transparent; border: 1px solid var(--border); color: var(--text-main);" data-i18n="btn_logout"><i class="ph ph-sign-out"></i> Sair</button>
             </div>
         </aside>
 
@@ -256,6 +258,33 @@
                                 </tbody>
                             </table>
                         </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ABA: CONFIGURAÇÕES -->
+            <section id="config-tab" class="tab-pane">
+                <h1 class="page-title" data-i18n="config_title">Configurações</h1>
+                
+                <div class="panel">
+                    <h3 data-i18n="config_theme">Tema</h3>
+                    <div class="form-group" style="margin-top: 1rem;">
+                        <label data-i18n="config_theme_label">Escolha o modo de exibição:</label>
+                        <select id="theme-selector" style="max-width: 300px;">
+                            <option value="dark" data-i18n="theme_dark">Modo Escuro</option>
+                            <option value="light" data-i18n="theme_light">Modo Claro</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="panel" style="margin-top: 2rem;">
+                    <h3 data-i18n="config_lang">Idioma</h3>
+                    <div class="form-group" style="margin-top: 1rem;">
+                        <label data-i18n="config_lang_label">Escolha o idioma do sistema:</label>
+                        <select id="lang-selector" style="max-width: 300px;">
+                            <option value="pt-br">Português (Brasil)</option>
+                            <option value="en">English</option>
+                        </select>
                     </div>
                 </div>
             </section>

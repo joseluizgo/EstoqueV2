@@ -1,5 +1,150 @@
 const API_URL = 'http://127.0.0.1:5000/api';
 
+// --- i18n Dicionário ---
+const translations = {
+    'pt-br': {
+        'menu_dashboard': 'Dashboard',
+        'menu_produtos': 'Produtos',
+        'menu_movimentacoes': 'Movimentações',
+        'menu_config': 'Configurações',
+        'btn_logout': 'Sair',
+        'config_title': 'Configurações',
+        'config_theme': 'Tema',
+        'config_theme_label': 'Escolha o modo de exibição:',
+        'theme_dark': 'Modo Escuro',
+        'theme_light': 'Modo Claro',
+        'config_lang': 'Idioma',
+        'config_lang_label': 'Escolha o idioma do sistema:',
+        'login_subtitle': 'Faça login para acessar o sistema',
+        'email_label': 'E-mail',
+        'password_label': 'Senha',
+        'login_btn': 'Entrar'
+    },
+    'en': {
+        'menu_dashboard': 'Dashboard',
+        'menu_produtos': 'Products',
+        'menu_movimentacoes': 'Movements',
+        'menu_config': 'Settings',
+        'btn_logout': 'Logout',
+        'config_title': 'Settings',
+        'config_theme': 'Theme',
+        'config_theme_label': 'Choose display mode:',
+        'theme_dark': 'Dark Mode',
+        'theme_light': 'Light Mode',
+        'config_lang': 'Language',
+        'config_lang_label': 'Choose system language:',
+        'login_subtitle': 'Login to access the system',
+        'email_label': 'Email',
+        'password_label': 'Password',
+        'login_btn': 'Login'
+    }
+};
+
+function applyTranslations(lang) {
+    const dict = translations[lang] || translations['pt-br'];
+    document.querySelectorAll('[data-i18n]').forEach(el => {
+        const key = el.getAttribute('data-i18n');
+        if (dict[key]) {
+            // Se tiver ícone dentro, preserva o ícone
+            const icon = el.querySelector('i');
+            if(icon) {
+                el.innerHTML = '';
+                el.appendChild(icon);
+                el.appendChild(document.createTextNode(' ' + dict[key]));
+            } else {
+                el.textContent = dict[key];
+            }
+        }
+    });
+}
+
+function initSettings() {
+    const themeSel = document.getElementById('theme-selector');
+    const langSel = document.getElementById('lang-selector');
+    if(!themeSel || !langSel) return;
+
+    const savedTheme = localStorage.getItem('theme') || 'dark';
+    const savedLang = localStorage.getItem('lang') || 'pt-br';
+
+    themeSel.value = savedTheme;
+    langSel.value = savedLang;
+
+    if (savedTheme === 'light') document.body.classList.add('light-mode');
+    applyTranslations(savedLang);
+
+    themeSel.addEventListener('change', (e) => {
+        const val = e.target.value;
+        localStorage.setItem('theme', val);
+        if (val === 'light') document.body.classList.add('light-mode');
+        else document.body.classList.remove('light-mode');
+    });
+
+    langSel.addEventListener('change', (e) => {
+        const val = e.target.value;
+        localStorage.setItem('lang', val);
+        applyTranslations(val);
+    });
+}
+
+// Global fetch options para mandar cookies
+const fetchOpts = { credentials: 'include' };
+
+// --- AUTH ---
+async function checkAuth() {
+    // Se for página de login, tenta fazer login e não checa /me da mesma forma
+    if (document.getElementById('login-form')) {
+        initSettings(); // Aplica tema e i18n na tela de login
+        document.getElementById('login-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const email = document.getElementById('email').value;
+            const senha = document.getElementById('senha').value;
+            const errorDiv = document.getElementById('login-error');
+            errorDiv.textContent = '';
+            try {
+                const res = await fetch(`${API_URL}/auth/login`, {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({email, senha}),
+                    credentials: 'include'
+                });
+                if(res.ok) {
+                    window.location.href = 'index.html';
+                } else {
+                    const data = await res.json();
+                    errorDiv.textContent = data.error || 'Credenciais inválidas';
+                }
+            } catch(e) {
+                errorDiv.textContent = 'Erro ao conectar com o servidor.';
+            }
+        });
+        return;
+    }
+
+    try {
+        const res = await fetch(`${API_URL}/auth/me`, fetchOpts);
+        if (!res.ok) {
+            window.location.href = 'login.html';
+            return;
+        }
+        const data = await res.json();
+        // Set user info
+        document.getElementById('user-name').textContent = data.user.nome;
+        document.getElementById('user-email').textContent = data.user.email;
+        document.getElementById('user-avatar').textContent = data.user.nome.charAt(0).toUpperCase();
+
+        document.getElementById('btn-logout').addEventListener('click', async () => {
+            await fetch(`${API_URL}/auth/logout`, { method: 'POST', credentials: 'include' });
+            window.location.href = 'login.html';
+        });
+
+        initSettings();
+        loadDashboard();
+
+    } catch(err) {
+        window.location.href = 'login.html';
+    }
+}
+
 // Instâncias do Chart.js
 let lineChartInstance = null;
 let doughnutChartInstance = null;
@@ -30,7 +175,8 @@ navBtns.forEach(btn => {
 // --- DASHBOARD ---
 async function loadDashboard() {
     try {
-        const res = await fetch(`${API_URL}/dashboard`);
+        const res = await fetch(`${API_URL}/dashboard`, fetchOpts);
+        if(!res.ok) return;
         const data = await res.json();
 
         // Métricas
@@ -86,16 +232,14 @@ async function loadDashboard() {
         });
 
     } catch (err) {
-        console.error("Erro ao carregar dashboard (Backend não iniciado?)", err);
+        console.error(err);
     }
 }
 
 function renderCharts(dados7dias, dadosCategoria) {
-    // Config global chart.js
     Chart.defaults.color = '#8b949e';
     Chart.defaults.font.family = 'Inter';
 
-    // Gráfico de Linha (7 dias)
     const ctxLine = document.getElementById('lineChart').getContext('2d');
     const labelsLine = Object.keys(dados7dias.entradas).reverse();
     const dataIn = Object.values(dados7dias.entradas).reverse();
@@ -136,7 +280,6 @@ function renderCharts(dados7dias, dadosCategoria) {
         }
     });
 
-    // Gráfico de Rosca (Categorias)
     const ctxDoughnut = document.getElementById('doughnutChart').getContext('2d');
     if (doughnutChartInstance) doughnutChartInstance.destroy();
     
@@ -164,10 +307,12 @@ function renderCharts(dados7dias, dadosCategoria) {
 // --- PRODUTOS ---
 async function loadProdutos() {
     try {
-        const res = await fetch(`${API_URL}/produtos`);
+        const res = await fetch(`${API_URL}/produtos`, fetchOpts);
+        if(!res.ok) return;
         const produtos = await res.json();
         
         const tbody = document.getElementById('prod-table-body');
+        if(!tbody) return;
         tbody.innerHTML = '';
         
         produtos.forEach(p => {
@@ -184,63 +329,74 @@ async function loadProdutos() {
                 </tr>
             `;
         });
-    } catch (err) {
-        console.error(err);
-    }
+    } catch (err) {}
 }
 
-document.getElementById('form-produto').addEventListener('submit', async (e) => {
-    e.preventDefault();
-    const payload = {
-        sku: document.getElementById('p-sku').value,
-        nome: document.getElementById('p-nome').value,
-        categoria: document.getElementById('p-cat').value,
-        preco: parseFloat(document.getElementById('p-preco').value),
-        estoque_minimo: parseInt(document.getElementById('p-min').value),
-        quantidade_atual: parseInt(document.getElementById('p-qtd').value),
-        descricao: document.getElementById('p-desc').value
-    };
+const formProduto = document.getElementById('form-produto');
+if(formProduto) {
+    formProduto.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const payload = {
+            sku: document.getElementById('p-sku').value,
+            nome: document.getElementById('p-nome').value,
+            categoria: document.getElementById('p-cat').value,
+            preco: parseFloat(document.getElementById('p-preco').value),
+            estoque_minimo: parseInt(document.getElementById('p-min').value),
+            quantidade_atual: parseInt(document.getElementById('p-qtd').value),
+            descricao: document.getElementById('p-desc').value
+        };
 
-    try {
-        const res = await fetch(`${API_URL}/produtos`, {
-            method: 'POST',
-            headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify(payload)
-        });
-        
-        if (res.ok) {
-            e.target.reset();
-            loadProdutos();
-            alert("Produto cadastrado com sucesso!");
-        } else {
-            const erro = await res.json();
-            alert("Erro: " + erro.error);
+        try {
+            const res = await fetch(`${API_URL}/produtos`, {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify(payload),
+                credentials: 'include'
+            });
+            
+            if (res.ok) {
+                e.target.reset();
+                loadProdutos();
+                alert("Produto cadastrado com sucesso!");
+            } else {
+                const erro = await res.json();
+                alert("Erro: " + erro.error);
+            }
+        } catch(err) {
+            alert("Erro ao conectar com servidor.");
         }
-    } catch(err) {
-        alert("Erro ao conectar com servidor.");
-    }
-});
+    });
+}
 
 window.deletarProduto = async (id) => {
     if(confirm('Tem certeza que deseja excluir?')) {
-        await fetch(`${API_URL}/produtos/${id}`, { method: 'DELETE' });
+        await fetch(`${API_URL}/produtos/${id}`, { method: 'DELETE', credentials: 'include' });
         loadProdutos();
     }
 }
 
 // --- MOVIMENTAÇÕES ---
 window.setMovType = (type) => {
-    document.getElementById('m-tipo').value = type;
+    const mTipo = document.getElementById('m-tipo');
+    if(mTipo) mTipo.value = type;
     document.querySelectorAll('.type-btn').forEach(b => b.classList.remove('active'));
-    if(type === 'ENTRADA') document.querySelector('.type-btn.in').classList.add('active');
-    else document.querySelector('.type-btn.out').classList.add('active');
+    if(type === 'ENTRADA') {
+        const el = document.querySelector('.type-btn.in');
+        if(el) el.classList.add('active');
+    }
+    else {
+        const el = document.querySelector('.type-btn.out');
+        if(el) el.classList.add('active');
+    }
 }
 
 async function populateSelectProdutos() {
     try {
-        const res = await fetch(`${API_URL}/produtos`);
+        const res = await fetch(`${API_URL}/produtos`, fetchOpts);
+        if(!res.ok) return;
         const produtos = await res.json();
         const select = document.getElementById('m-prod');
+        if(!select) return;
         select.innerHTML = '<option value="">Selecione um produto...</option>';
         produtos.forEach(p => {
             select.innerHTML += `<option value="${p.id}">${p.sku} - ${p.nome} (Disp: ${p.quantidade_atual})</option>`;
@@ -250,10 +406,12 @@ async function populateSelectProdutos() {
 
 async function loadMovimentacoes() {
     try {
-        const res = await fetch(`${API_URL}/movimentacoes`);
+        const res = await fetch(`${API_URL}/movimentacoes`, fetchOpts);
+        if(!res.ok) return;
         const movs = await res.json();
         
         const tbody = document.getElementById('mov-table-body');
+        if(!tbody) return;
         tbody.innerHTML = '';
         
         movs.forEach(m => {
@@ -274,42 +432,46 @@ async function loadMovimentacoes() {
     } catch(err) {}
 }
 
-document.getElementById('form-mov').addEventListener('submit', async (e) => {
-    e.preventDefault();
-    const payload = {
-        produto_id: parseInt(document.getElementById('m-prod').value),
-        tipo: document.getElementById('m-tipo').value,
-        quantidade: parseInt(document.getElementById('m-qtd').value),
-        motivo: document.getElementById('m-motivo').value,
-        observacoes: document.getElementById('m-obs').value
-    };
+const formMov = document.getElementById('form-mov');
+if(formMov) {
+    formMov.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const payload = {
+            produto_id: parseInt(document.getElementById('m-prod').value),
+            tipo: document.getElementById('m-tipo').value,
+            quantidade: parseInt(document.getElementById('m-qtd').value),
+            motivo: document.getElementById('m-motivo').value,
+            observacoes: document.getElementById('m-obs').value
+        };
 
-    if(isNaN(payload.produto_id)) {
-        alert("Selecione o produto!");
-        return;
-    }
-
-    try {
-        const res = await fetch(`${API_URL}/movimentacoes`, {
-            method: 'POST',
-            headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify(payload)
-        });
-        
-        if (res.ok) {
-            e.target.reset();
-            setMovType('ENTRADA'); // reseta
-            loadMovimentacoes();
-            populateSelectProdutos();
-            alert("Movimentação registrada!");
-        } else {
-            const erro = await res.json();
-            alert("Erro: " + erro.error);
+        if(isNaN(payload.produto_id)) {
+            alert("Selecione o produto!");
+            return;
         }
-    } catch(err) {
-        alert("Erro de conexão.");
-    }
-});
 
-// Inicialização
-loadDashboard();
+        try {
+            const res = await fetch(`${API_URL}/movimentacoes`, {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify(payload),
+                credentials: 'include'
+            });
+            
+            if (res.ok) {
+                e.target.reset();
+                setMovType('ENTRADA'); // reseta
+                loadMovimentacoes();
+                populateSelectProdutos();
+                alert("Movimentação registrada!");
+            } else {
+                const erro = await res.json();
+                alert("Erro: " + erro.error);
+            }
+        } catch(err) {
+            alert("Erro de conexão.");
+        }
+    });
+}
+
+// Inicializa checando auth (ou setando a tela de login)
+checkAuth();

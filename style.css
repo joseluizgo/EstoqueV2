@@ -23,6 +23,17 @@
     --transition: all 0.25s ease;
 }
 
+body.light-mode {
+    --bg-base: #f3f4f6;
+    --bg-panel: #ffffff;
+    --bg-panel-hover: #f9fafb;
+    
+    --text-main: #1f2937;
+    --text-muted: #6b7280;
+    
+    --border: #e5e7eb;
+}
+
 * {
     margin: 0;
     padding: 0;

@@ -3,6 +3,15 @@
 CREATE DATABASE IF NOT EXISTS estoquepro;
 USE estoquepro;
 
+-- Tabela de Administradores
+CREATE TABLE IF NOT EXISTS administradores (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    nome VARCHAR(100) NOT NULL,
+    email VARCHAR(100) NOT NULL UNIQUE,
+    senha_hash VARCHAR(255) NOT NULL,
+    criado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
 -- Tabela de Produtos
 CREATE TABLE IF NOT EXISTS produtos (
     id INT AUTO_INCREMENT PRIMARY KEY,
@@ -40,3 +49,7 @@ INSERT IGNORE INTO movimentacoes (produto_id, tipo, quantidade, motivo, observac
 (2, 'ENTRADA', 10, 'Compra de Fornecedor', 'Nota fiscal 1234'),
 (2, 'SAIDA', 2, 'Venda', 'Pedido #102'),
 (3, 'ENTRADA', 12, 'Compra de Fornecedor', 'Nota fiscal 1235');
+
+-- Administrador Padrão (Senha: admin123)
+INSERT IGNORE INTO administradores (nome, email, senha_hash) VALUES
+('Administrador', 'admin@estoquepro.com', 'scrypt:32768:8:1$3KDK04RJTPsWOO1w$44745553c76b311356eb59e8a84a2c472d49e36f37ca851b82bd14083cfb9a1024031474343b6c9e889fa6d314811a43104aee23e9e625617db708cb9b84a49f');

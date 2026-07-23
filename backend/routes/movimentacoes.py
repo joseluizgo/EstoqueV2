@@ -1,0 +1,44 @@
+from flask import Blueprint, jsonify, request
+from flask_login import login_required, current_user
+from models import Movimentacao, Produto
+from extensions import db
+
+movimentacoes_bp = Blueprint('movimentacoes', __name__)
+
+@movimentacoes_bp.route('', methods=['GET', 'POST'])
+@login_required
+def handle_movimentacoes():
+    if request.method == 'GET':
+        movs = Movimentacao.query.order_by(Movimentacao.data_hora.desc()).all()
+        return jsonify([m.to_dict() for m in movs])
+        
+    elif request.method == 'POST':
+        data = request.json
+        produto_id = data.get('produto_id')
+        tipo = data.get('tipo')
+        quantidade = int(data.get('quantidade', 0))
+        
+        produto = Produto.query.get_or_404(produto_id)
+        
+        if tipo == 'SAIDA' and produto.quantidade_atual < quantidade:
+            return jsonify({'error': 'Estoque insuficiente'}), 400
+            
+        nova_mov = Movimentacao(
+            produto_id=produto.id,
+            tipo=tipo,
+            quantidade=quantidade,
+            motivo=data.get('motivo'),
+            observacoes=data.get('observacoes'),
+            usuario=current_user.nome if current_user.is_authenticated else 'Administrador'
+        )
+        
+        # Atualiza a tabela de Produtos
+        if tipo == 'ENTRADA':
+            produto.quantidade_atual += quantidade
+        elif tipo == 'SAIDA':
+            produto.quantidade_atual -= quantidade
+            
+        db.session.add(nova_mov)
+        db.session.commit()
+        
+        return jsonify(nova_mov.to_dict()), 201

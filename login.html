@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EstoquePro - Login</title>
+    <!-- Fontes -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- Ícones -->
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    <link rel="stylesheet" href="style.css">
+    <style>
+        body {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+        }
+        .login-container {
+            background-color: var(--bg-panel);
+            padding: 2rem;
+            border-radius: var(--radius);
+            border: 1px solid var(--border);
+            width: 100%;
+            max-width: 400px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            text-align: center;
+        }
+        .login-container .logo-area {
+            border-bottom: none;
+            justify-content: center;
+            margin-bottom: 1rem;
+            padding: 0;
+        }
+        .login-form {
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+            text-align: left;
+        }
+        .error-message {
+            color: var(--neon-red);
+            font-size: 0.9rem;
+            text-align: center;
+            min-height: 1.2rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="login-container">
+        <div class="logo-area">
+            <i class="ph-fill ph-hexagon"></i> <span>EstoquePro</span>
+        </div>
+        <p style="color: var(--text-muted); margin-bottom: 2rem;" data-i18n="login_subtitle">Faça login para acessar o sistema</p>
+        
+        <form id="login-form" class="login-form">
+            <div class="form-group" style="width: 100%;">
+                <label data-i18n="email_label">E-mail</label>
+                <input type="email" id="email" required placeholder="admin@estoquepro.com" style="width: 100%;">
+            </div>
+            <div class="form-group" style="width: 100%;">
+                <label data-i18n="password_label">Senha</label>
+                <input type="password" id="senha" required placeholder="••••••••" style="width: 100%;">
+            </div>
+            <div class="error-message" id="login-error"></div>
+            <button type="submit" class="btn btn-primary" style="width: 100%; justify-content: center;" data-i18n="login_btn">Entrar</button>
+        </form>
+    </div>
+
+    <script src="app.js"></script>
+    <script>
+        // Aplicar tema imediatamente caso exista
+        if(localStorage.getItem('theme') === 'light') {
+            document.body.classList.add('light-mode');
+        }
+    </script>
+</body>
+</html>
