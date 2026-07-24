@@ -1,4 +1,8 @@
-const API_URL = 'http://127.0.0.1:5000/api';
+// Detecta se está rodando localmente, caso contrário usa a URL relativa ou do mesmo host (ou você pode colocar a URL final do Railway aqui)
+const API_URL = (window.location.hostname === '127.0.0.1' || window.location.hostname === 'localhost' || window.location.protocol === 'file:') 
+    ? 'http://127.0.0.1:5000/api' 
+    : 'https://' + window.location.hostname + '/api'; // Troque window.location.hostname pela URL do backend se estiver em outro domínio
+
 
 // --- i18n Dicionário ---
 const translations = {
