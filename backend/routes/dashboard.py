@@ -1,4 +1,5 @@
-from flask import Blueprint, jsonify
+from flask import Blueprint, jsonify, session
+# pyrefly: ignore [missing-import]
 from flask_login import login_required
 from models import Produto, Movimentacao
 from extensions import db
@@ -9,8 +10,12 @@ dashboard_bp = Blueprint('dashboard', __name__)
 @dashboard_bp.route('', methods=['GET'])
 @login_required
 def get_dashboard():
-    produtos = Produto.query.all()
-    movimentacoes = Movimentacao.query.order_by(Movimentacao.data_hora.desc()).all()
+    empresa_id = session.get('empresa_id')
+    if not empresa_id:
+        return jsonify({'error': 'Sessão inválida. Por favor, faça login novamente.'}), 401
+
+    produtos = Produto.query.filter_by(empresa_id=empresa_id).all()
+    movimentacoes = Movimentacao.query.filter_by(empresa_id=empresa_id).order_by(Movimentacao.data_hora.desc()).all()
     
     # Métricas
     total_produtos = len(produtos)
@@ -33,7 +38,7 @@ def get_dashboard():
             
     # Gráfico 2: Movimentações últimos 7 dias
     sete_dias_atras = datetime.utcnow() - timedelta(days=7)
-    movs_recentes = Movimentacao.query.filter(Movimentacao.data_hora >= sete_dias_atras).all()
+    movs_recentes = Movimentacao.query.filter(Movimentacao.empresa_id == empresa_id, Movimentacao.data_hora >= sete_dias_atras).all()
     
     chart_7dias = {'entradas': {}, 'saidas': {}}
     for i in range(7):

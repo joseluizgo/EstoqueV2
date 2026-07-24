@@ -1,4 +1,4 @@
-from flask import Blueprint, jsonify, request
+from flask import Blueprint, jsonify, request, session
 from flask_login import login_required, current_user
 from models import Movimentacao, Produto
 from extensions import db
@@ -8,8 +8,12 @@ movimentacoes_bp = Blueprint('movimentacoes', __name__)
 @movimentacoes_bp.route('', methods=['GET', 'POST'])
 @login_required
 def handle_movimentacoes():
+    empresa_id = session.get('empresa_id')
+    if not empresa_id:
+        return jsonify({'error': 'Sessão inválida. Por favor, faça login novamente.'}), 401
+
     if request.method == 'GET':
-        movs = Movimentacao.query.order_by(Movimentacao.data_hora.desc()).all()
+        movs = Movimentacao.query.filter_by(empresa_id=empresa_id).order_by(Movimentacao.data_hora.desc()).all()
         return jsonify([m.to_dict() for m in movs])
         
     elif request.method == 'POST':
@@ -18,12 +22,13 @@ def handle_movimentacoes():
         tipo = data.get('tipo')
         quantidade = int(data.get('quantidade', 0))
         
-        produto = Produto.query.get_or_404(produto_id)
+        produto = Produto.query.filter_by(id=produto_id, empresa_id=empresa_id).first_or_404()
         
         if tipo == 'SAIDA' and produto.quantidade_atual < quantidade:
             return jsonify({'error': 'Estoque insuficiente'}), 400
             
         nova_mov = Movimentacao(
+            empresa_id=empresa_id,
             produto_id=produto.id,
             tipo=tipo,
             quantidade=quantidade,

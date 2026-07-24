@@ -2,9 +2,16 @@ from extensions import db
 from flask_login import UserMixin
 from datetime import datetime
 
+class Empresa(db.Model):
+    __tablename__ = 'empresas'
+    id = db.Column(db.Integer, primary_key=True)
+    nome = db.Column(db.String(100), nullable=False)
+    criado_em = db.Column(db.DateTime, default=datetime.utcnow)
+
 class Administrador(UserMixin, db.Model):
     __tablename__ = 'administradores'
     id = db.Column(db.Integer, primary_key=True)
+    empresa_id = db.Column(db.Integer, db.ForeignKey('empresas.id'), nullable=False)
     nome = db.Column(db.String(100), nullable=False)
     email = db.Column(db.String(100), unique=True, nullable=False)
     senha_hash = db.Column(db.String(255), nullable=False)
@@ -13,6 +20,7 @@ class Administrador(UserMixin, db.Model):
     def to_dict(self):
         return {
             'id': self.id,
+            'empresa_id': self.empresa_id,
             'nome': self.nome,
             'email': self.email,
             'criado_em': self.criado_em.isoformat() if self.criado_em else None
@@ -21,7 +29,8 @@ class Administrador(UserMixin, db.Model):
 class Produto(db.Model):
     __tablename__ = 'produtos'
     id = db.Column(db.Integer, primary_key=True)
-    sku = db.Column(db.String(50), unique=True, nullable=False)
+    empresa_id = db.Column(db.Integer, db.ForeignKey('empresas.id'), nullable=False)
+    sku = db.Column(db.String(50), nullable=False)
     nome = db.Column(db.String(255), nullable=False)
     categoria = db.Column(db.String(100), nullable=False)
     preco = db.Column(db.Numeric(10, 2), nullable=False)
@@ -31,6 +40,8 @@ class Produto(db.Model):
     imagem_url = db.Column(db.String(255))
     
     movimentacoes = db.relationship('Movimentacao', backref='produto', cascade='all, delete-orphan')
+
+    __table_args__ = (db.UniqueConstraint('sku', 'empresa_id', name='uq_sku_empresa'),)
 
     def to_dict(self):
         return {
@@ -48,6 +59,7 @@ class Produto(db.Model):
 class Movimentacao(db.Model):
     __tablename__ = 'movimentacoes'
     id = db.Column(db.Integer, primary_key=True)
+    empresa_id = db.Column(db.Integer, db.ForeignKey('empresas.id'), nullable=False)
     produto_id = db.Column(db.Integer, db.ForeignKey('produtos.id'), nullable=False)
     tipo = db.Column(db.Enum('ENTRADA', 'SAIDA'), nullable=False)
     quantidade = db.Column(db.Integer, nullable=False)

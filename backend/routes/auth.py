@@ -1,6 +1,8 @@
-from flask import Blueprint, request, jsonify
+from flask import Blueprint, request, jsonify, session
+# pyrefly: ignore [missing-import]
 from flask_login import login_user, logout_user, login_required, current_user
 from werkzeug.security import check_password_hash
+from werkzeug.security import check_password_hash, generate_password_hash
 from models import Administrador
 from extensions import db
 
@@ -19,6 +21,7 @@ def login():
     
     if admin and check_password_hash(admin.senha_hash, senha):
         login_user(admin)
+        session['empresa_id'] = admin.empresa_id
         return jsonify({'message': 'Login realizado com sucesso', 'user': admin.to_dict()}), 200
     else:
         return jsonify({'error': 'Credenciais inválidas'}), 401
@@ -27,6 +30,7 @@ def login():
 @login_required
 def logout():
     logout_user()
+    session.pop('empresa_id', None)
     return jsonify({'message': 'Logout realizado com sucesso'}), 200
 
 @auth_bp.route('/me', methods=['GET'])
